@@ -32,25 +32,25 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ## 📅 Roadmap Stages
 
-### Phase 1: Infrastructure Setup (Podman)
+### Phase 1: Infrastructure Setup (Podman) ✅
 
 > Establish the containerized environment to ensure portable execution.
 
-- [ ] **Define Podman Pod**
+- [x] **Define Podman Pod**
   - Create a pod named `sensor_stack` to group the Database, API, and Ingester.
   - **Note:** The pod does *not* need to expose MQTT ports, only the Web UI port (e.g., 80 or 3000).
 
-- [ ] **PostgreSQL Container**
+- [x] **PostgreSQL Container**
   - Deploy official PostgreSQL image.
   - Configure persistent volume for `pg_data`.
 
-- [ ] **Environment Configuration**
+- [x] **Environment Configuration**
   - Create a `.env` file to store external broker credentials:
     - `MQTT_BROKER_IP`
     - `MQTT_PORT`
     - `MQTT_USER` / `MQTT_PASS`
 
-- [ ] **Orchestration**
+- [x] **Orchestration**
   - Create a `podman-compose.yml` defining services for: Database, Ingester, API, Frontend, and Cloudflared.
   - Create a `podman-compose.dev.yml` override for local development:
     | Difference         | Production              | Development             |
@@ -61,7 +61,7 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
     | Debug Mode         | Off                     | On (verbose logging)    |
     | Database           | Persistent volume       | Persistent volume       |
 
-- [ ] **Local Development Setup**
+- [x] **Local Development Setup**
   - Mount source code as volumes for hot-reload:
     - `./api:/app` for FastAPI (with `--reload` flag)
     - `./frontend:/app` for React (Vite dev server)
@@ -78,7 +78,7 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
     ```
   - Support connecting to **either** external MQTT broker or local test broker.
 
-- [ ] **Health Checks & Monitoring**
+- [x] **Health Checks & Monitoring**
   - Add health check endpoints to each service:
     | Service    | Endpoint           | Checks                          |
     |------------|--------------------|---------------------------------|
@@ -89,7 +89,7 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
   - Implement structured JSON logging (timestamp, level, service, message).
   - Add log aggregation strategy (stdout → file rotation or external service).
 
-- [ ] **Cloudflare Tunnel (cloudflared)**
+- [x] **Cloudflare Tunnel (cloudflared)**
   - Deploy `cloudflare/cloudflared` container in the pod.
   - Configure tunnel to expose the web UI securely without port forwarding.
   - Set up tunnel routes:
@@ -105,7 +105,7 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
     - Built-in DDoS protection.
     - Automatic HTTPS certificates.
 
-- [ ] **Version Tracking**
+- [x] **Version Tracking**
   - Create `VERSION` file in project root (e.g., `1.0.0`).
   - Follow [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
   - Inject version into containers via build args or environment variables.
@@ -483,7 +483,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| 1     | ⬜ Not Started | Infrastructure Setup |
+| 1     | ✅ Complete | Infrastructure Setup |
 | 2     | ⬜ Not Started | Database Schema |
 | 3     | ⬜ Not Started | Ingestion Service |
 | 4     | ⬜ Not Started | REST API |

@@ -1,0 +1,65 @@
+# ================================
+# SensorPulse - Development Override
+# ================================
+# Usage: podman-compose -f podman-compose.yml -f podman-compose.dev.yml up
+
+version: "3.8"
+
+services:
+  # ----------------
+  # PostgreSQL Database (expose port for local tools)
+  # ----------------
+  db:
+    ports:
+      - "5432:5432"
+
+  # ----------------
+  # MQTT Ingester Service (hot reload)
+  # ----------------
+  ingester:
+    build:
+      context: ./ingester
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./ingester:/app:z
+    environment:
+      LOG_LEVEL: DEBUG
+
+  # ----------------
+  # FastAPI Backend (hot reload)
+  # ----------------
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app:z
+    environment:
+      API_DEBUG: "true"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # ----------------
+  # React Frontend (Vite dev server)
+  # ----------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_WS_URL: ws://localhost:8000/ws
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+  # ----------------
+  # Cloudflare Tunnel (disabled in dev)
+  # ----------------
+  cloudflared:
+    profiles:
+      - production
