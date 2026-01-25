@@ -156,21 +156,21 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ---
 
-### Phase 3: Backend Ingestion Service
+### Phase 3: Backend Ingestion Service ✅
 
 > The bridge that connects your external broker to the internal database.
 
-- [ ] **External Connection**
+- [x] **External Connection**
   - Implement Python script using `paho-mqtt`.
   - Configure connection logic to reach the **External Broker IP**.
   - Subscribe to `zigbee2mqtt/+` (wildcard).
 
-- [ ] **Payload Parsing**
+- [x] **Payload Parsing**
   - **Type A (Full):** Extract `comfort_` metrics, `update` status.
   - **Type B (Minimal):** Extract `temp/battery` only.
   - Flatten the JSON structure for SQL insertion.
 
-- [ ] **Data Persistence**
+- [x] **Data Persistence**
   - Write cleaned data to PostgreSQL `sensor_readings` table.
 
 ---
@@ -485,7 +485,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 |-------|--------|-------------|
 | 1     | ✅ Complete | Infrastructure Setup |
 | 2     | ✅ Complete | Database Schema |
-| 3     | ⬜ Not Started | Ingestion Service |
+| 3     | ✅ Complete | Ingestion Service |
 | 4     | ⬜ Not Started | REST API |
 | 5     | ⬜ Not Started | React Frontend |
 | 6     | ⬜ Not Started | Polish & Optimization |
