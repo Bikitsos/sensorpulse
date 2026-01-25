@@ -44,6 +44,13 @@ class SensorReading(Base):
         index=True,
     )
     
+    # Device name extracted from topic (e.g., 'zigbee2mqtt/sensor1' -> 'sensor1')
+    device_name = Column(
+        String(255),
+        nullable=False,
+        index=True,
+    )
+    
     # Common sensor fields (nullable for different device types)
     temperature = Column(Float, nullable=True)
     humidity = Column(Float, nullable=True)
@@ -57,6 +64,7 @@ class SensorReading(Base):
     __table_args__ = (
         Index("ix_sensor_readings_time", "time"),
         Index("ix_sensor_readings_topic_time", "topic", "time"),
+        Index("ix_sensor_readings_device_name", "device_name"),
     )
 
     def __repr__(self):

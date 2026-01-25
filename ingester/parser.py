@@ -16,6 +16,7 @@ class ParsedReading:
     """
     topic: str
     time: datetime
+    device_name: str = ""
     temperature: Optional[float] = None
     humidity: Optional[float] = None
     battery: Optional[int] = None
@@ -92,10 +93,11 @@ class PayloadParser:
                 logger.debug("Empty payload", topic=topic)
                 return None
             
-            # Create reading with timestamp
+            # Create reading with timestamp and device name
             reading = ParsedReading(
                 topic=topic,
                 time=datetime.now(timezone.utc),
+                device_name=self.extract_device_name(topic),
                 raw_data=payload,
             )
             

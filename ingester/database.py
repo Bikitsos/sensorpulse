@@ -124,10 +124,11 @@ class DatabaseWriter:
                 # Use raw SQL for efficient batch insert with ON CONFLICT handling
                 insert_sql = text("""
                     INSERT INTO sensor_readings 
-                        (time, topic, temperature, humidity, battery, linkquality, raw_data)
+                        (time, topic, device_name, temperature, humidity, battery, linkquality, raw_data)
                     VALUES 
-                        (:time, :topic, :temperature, :humidity, :battery, :linkquality, :raw_data)
+                        (:time, :topic, :device_name, :temperature, :humidity, :battery, :linkquality, :raw_data)
                     ON CONFLICT (time, topic) DO UPDATE SET
+                        device_name = EXCLUDED.device_name,
                         temperature = EXCLUDED.temperature,
                         humidity = EXCLUDED.humidity,
                         battery = EXCLUDED.battery,
@@ -141,6 +142,7 @@ class DatabaseWriter:
                         {
                             "time": reading.time,
                             "topic": reading.topic,
+                            "device_name": reading.device_name,
                             "temperature": reading.temperature,
                             "humidity": reading.humidity,
                             "battery": reading.battery,
