@@ -116,11 +116,11 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ---
 
-### Phase 2: Database Schema Design
+### Phase 2: Database Schema Design ✅
 
 > Design a schema robust enough for variable Zigbee payloads.
 
-- [ ] **Schema Definition**
+- [x] **Schema Definition**
   - Create table `sensor_readings`:
     | Column        | Type      | Notes       |
     |---------------|-----------|-------------|
@@ -144,11 +144,11 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
     | `report_time`      | TIME      | Preferred delivery time  |
     | `created_at`       | TIMESTAMP | Account creation time    |
 
-- [ ] **Optimization**
+- [x] **Optimization**
   - Create indexes on `topic` and `time` for fast graph rendering.
   - Create a view `latest_readings` to fetch the single most recent row per device.
 
-- [ ] **Database Migrations (Alembic)**
+- [x] **Database Migrations (Alembic)**
   - Initialize Alembic in the API project.
   - Create initial migration for `sensor_readings` and `users` tables.
   - Add migration scripts to deployment process.
@@ -484,7 +484,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1     | ✅ Complete | Infrastructure Setup |
-| 2     | ⬜ Not Started | Database Schema |
+| 2     | ✅ Complete | Database Schema |
 | 3     | ⬜ Not Started | Ingestion Service |
 | 4     | ⬜ Not Started | REST API |
 | 5     | ⬜ Not Started | React Frontend |
