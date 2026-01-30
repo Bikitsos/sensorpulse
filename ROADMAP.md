@@ -175,34 +175,34 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ---
 
-### Phase 4: REST API Layer
+### Phase 4: REST API Layer ✅
 
 > React cannot talk to Postgres directly; this layer serves the data.
 
-- [ ] **Setup API Framework**
+- [x] **Setup API Framework**
   - Initialize a lightweight API (e.g., Python FastAPI).
 
-- [ ] **API Documentation (Auto-generated)**
+- [x] **API Documentation (Auto-generated)**
   - Enable FastAPI's built-in Swagger UI at `/docs`.
   - Enable ReDoc at `/redoc`.
   - Add detailed docstrings and Pydantic models for auto-documentation.
   - Export OpenAPI schema for external tools.
 
-- [ ] **Security Hardening**
+- [x] **Security Hardening**
   - Implement rate limiting (e.g., 100 requests/minute per user).
   - Configure CORS (allow only your frontend domain).
   - Add input validation on all endpoints (Pydantic).
   - Sanitize database queries (use ORM/parameterized queries).
   - Add request logging with user context.
 
-- [ ] **Develop Endpoints**
+- [x] **Develop Endpoints**
   | Endpoint                    | Description                                      |
   |-----------------------------|--------------------------------------------------|
   | `GET /api/devices`          | Returns distinct list of discovered topics/sensors |
   | `GET /api/latest`           | Returns the most recent reading for all devices (for Cards) |
   | `GET /api/history/{device_id}` | Returns data points for the last 24h/7d (for Graphs) |
 
-- [ ] **WebSocket Support (Real-time Updates)**
+- [x] **WebSocket Support (Real-time Updates)**
   - Implement WebSocket endpoint: `WS /ws/sensors`
   - Broadcast new sensor readings in real-time as they arrive.
   - Benefits over polling:
@@ -211,10 +211,10 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
     - Better UX for live monitoring.
   - Fallback to polling for clients that don't support WebSockets.
 
-- [ ] **Containerize API**
+- [x] **Containerize API**
   - Create `Dockerfile.api` and add to the pod.
 
-- [ ] **Google Authentication (Backend)**
+- [x] **Google Authentication (Backend)**
   - Set up Google Cloud Console project and OAuth 2.0 credentials.
   - Implement OAuth 2.0 flow endpoints:
     | Endpoint              | Description                              |
@@ -230,7 +230,7 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
     - `GOOGLE_CLIENT_SECRET`
     - `JWT_SECRET`
 
-- [ ] **Daily Email Reports (Resend)**
+- [x] **Daily Email Reports (Resend)**
   - Set up [Resend](https://resend.com) account and obtain API key.
   - Create report service endpoints:
     | Endpoint                     | Description                              |
@@ -486,7 +486,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 | 1     | ✅ Complete | Infrastructure Setup |
 | 2     | ✅ Complete | Database Schema |
 | 3     | ✅ Complete | Ingestion Service |
-| 4     | ⬜ Not Started | REST API |
+| 4     | ✅ Complete | REST API |
 | 5     | ⬜ Not Started | React Frontend |
 | 6     | ⬜ Not Started | Polish & Optimization |
 | 7     | ⬜ Not Started | Testing |
