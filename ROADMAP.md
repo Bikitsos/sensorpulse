@@ -252,42 +252,42 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ---
 
-### Phase 5: React Frontend (The "Pretty" UI)
+### Phase 5: React Frontend (The "Pretty" UI) ✅
 
 > Building the visual interface.
 
-- [ ] **Project Setup**
+- [x] **Project Setup**
   - Initialize with **Vite** for speed.
   - Install **Tailwind CSS** for styling.
   - Install **Recharts** or **Nivo** for beautiful, responsive charts.
 
-- [ ] **Component Development**
+- [x] **Component Development**
   - **Sensor Card:** A glass-morphism style card showing current Temp, Humidity, and Battery icon.
   - **Chart Component:** A smooth spline area chart showing temperature history.
   - **Layout:** A responsive grid that adjusts columns based on screen size.
 
-- [ ] **State Management**
+- [x] **State Management**
   - Implement React Query (TanStack Query) to poll the API every 30-60 seconds.
   - Add WebSocket connection for real-time updates:
     - Auto-reconnect on disconnect.
     - Merge live updates with cached query data.
     - Show connection status indicator (🟢 Live / 🟡 Reconnecting / 🔴 Offline).
 
-- [ ] **Google Authentication (Frontend)**
+- [x] **Google Authentication (Frontend)**
   - Create **Login Page** with "Sign in with Google" button.
   - Implement protected routes (redirect to login if not authenticated).
   - Store JWT token in `httpOnly` cookie or secure storage.
   - Add user avatar/logout button in the header.
   - Handle token expiration and refresh.
 
-- [ ] **Report Preferences UI**
+- [x] **Report Preferences UI**
   - Add **Settings Page** with:
     - Toggle for daily email reports (on/off).
     - Time picker for preferred delivery time.
     - "Send Test Report" button.
     - Preview of report format.
 
-- [ ] **Containerize Frontend**
+- [x] **Containerize Frontend**
   - Create multi-stage `Dockerfile.web`:
     1. **Build:** Node.js compiles React to static HTML/JS.
     2. **Serve:** Nginx (Alpine) serves the static files.
@@ -487,7 +487,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 | 2     | ✅ Complete | Database Schema |
 | 3     | ✅ Complete | Ingestion Service |
 | 4     | ✅ Complete | REST API |
-| 5     | ⬜ Not Started | React Frontend |
+| 5     | ✅ Complete | React Frontend |
 | 6     | ⬜ Not Started | Polish & Optimization |
 | 7     | ⬜ Not Started | Testing |
 | 8     | ⬜ Not Started | CI/CD & Deployment |

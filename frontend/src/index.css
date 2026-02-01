@@ -1,3 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+  }
+}
+
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/50;
+  }
+
+  /* Sensor value display */
+  .sensor-value {
+    @apply text-4xl font-bold tracking-tight;
+  }
+
+  /* Status indicator */
+  .status-dot {
+    @apply w-2.5 h-2.5 rounded-full;
+  }
+
+  .status-online {
+    @apply bg-sp-lime animate-pulse-slow;
+  }
+
+  .status-offline {
+    @apply bg-red-500;
+  }
+
+  .status-stale {
+    @apply bg-yellow-500;
+  }
+}
+
+@layer utilities {
+  /* Temperature color coding */
+  .temp-cold {
+    @apply text-blue-500;
+  }
+
+  .temp-normal {
+    @apply text-sp-cyan;
+  }
+
+  .temp-warm {
+    @apply text-orange-500;
+  }
+
+  .temp-hot {
+    @apply text-red-500;
+  }
+}
