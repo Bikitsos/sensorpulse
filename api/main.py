@@ -17,7 +17,6 @@ from db import engine
 from middleware import RateLimitMiddleware
 from routes import sensors, auth, websocket, reports
 from websocket import ws_manager
-from cleanup import cleanup_scheduler, cleanup_old_readings
 
 # Configure structured logging
 structlog.configure(
@@ -58,21 +57,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         logger.error("Database connection failed", error=str(e))
         raise
     
-    # Start background data cleanup scheduler
-    cleanup_task = asyncio.create_task(cleanup_scheduler())
-    logger.info("Data cleanup scheduler launched")
-    
     yield
     
     # Shutdown
     logger.info("SensorPulse API shutting down")
-    
-    # Cancel cleanup scheduler
-    cleanup_task.cancel()
-    try:
-        await cleanup_task
-    except asyncio.CancelledError:
-        pass
     
     # Close all WebSocket connections
     await ws_manager.disconnect_all()
