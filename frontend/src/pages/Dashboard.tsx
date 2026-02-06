@@ -96,12 +96,12 @@ export function Dashboard({ onSensorUpdate }: DashboardProps) {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Monitor your sensors in real-time
           </p>
         </div>
@@ -116,38 +116,38 @@ export function Dashboard({ onSensorUpdate }: DashboardProps) {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-4">
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-1">
-            <Thermometer className="w-4 h-4" />
-            <span>Avg Temperature</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="glass-card p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">
+            <Thermometer className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Avg Temp</span>
           </div>
-          <p className="text-2xl font-bold text-sp-cyan">
+          <p className="text-xl sm:text-2xl font-bold text-sp-cyan">
             {stats.avgTemp !== null ? `${stats.avgTemp.toFixed(1)}°C` : '—'}
           </p>
         </div>
-        <div className="glass-card p-4">
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-1">
-            <Droplets className="w-4 h-4" />
+        <div className="glass-card p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">
+            <Droplets className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Avg Humidity</span>
           </div>
-          <p className="text-2xl font-bold text-sp-cyan">
+          <p className="text-xl sm:text-2xl font-bold text-sp-cyan">
             {stats.avgHumidity !== null ? `${stats.avgHumidity.toFixed(0)}%` : '—'}
           </p>
         </div>
-        <div className="glass-card p-4">
-          <div className="text-gray-500 dark:text-gray-400 text-sm mb-1">
+        <div className="glass-card p-3 sm:p-4">
+          <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">
             Online Sensors
           </div>
-          <p className="text-2xl font-bold text-sp-lime">
+          <p className="text-xl sm:text-2xl font-bold text-sp-lime">
             {stats.onlineCount} / {stats.totalCount}
           </p>
         </div>
-        <div className="glass-card p-4">
-          <div className="text-gray-500 dark:text-gray-400 text-sm mb-1">
+        <div className="glass-card p-3 sm:p-4">
+          <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-1">
             Status
           </div>
-          <p className="text-2xl font-bold text-sp-lime">
+          <p className="text-lg sm:text-2xl font-bold text-sp-lime">
             {stats.onlineCount === stats.totalCount ? '✓ All Online' : '⚠️ Some Offline'}
           </p>
         </div>
@@ -160,9 +160,9 @@ export function Dashboard({ onSensorUpdate }: DashboardProps) {
         </h2>
         
         {sensorsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="glass-card p-6 animate-pulse">
+              <div key={i} className="glass-card p-5 sm:p-6 animate-pulse">
                 <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4" />
                 <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
                 <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
@@ -170,7 +170,7 @@ export function Dashboard({ onSensorUpdate }: DashboardProps) {
             ))}
           </div>
         ) : sensors && sensors.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {sensors.map((sensor) => (
               <SensorCard
                 key={sensor.device_name}
@@ -191,9 +191,9 @@ export function Dashboard({ onSensorUpdate }: DashboardProps) {
 
       {/* Chart Section */}
       {selectedSensor && (
-        <section className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <section className="glass-card p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
               {selectedSensor} History
             </h2>
             <div className="flex items-center gap-2">

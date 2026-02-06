@@ -4,9 +4,10 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Settings, LogOut, Menu, X, Moon, Sun } from 'lucide-react';
+import { Activity, Settings, LogOut, Menu, X, Moon, Sun, Monitor } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../hooks/useAuth';
+import { useDarkMode } from '../../hooks/useDarkMode';
 import { ConnectionStatus } from './ConnectionStatus';
 import type { ConnectionStatus as ConnectionStatusType } from '../../types';
 
@@ -19,14 +20,10 @@ export function Header({ connectionStatus, onReconnect }: HeaderProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    document.documentElement.classList.contains('dark')
-  );
+  const { theme, isDark, toggle } = useDarkMode();
 
-  const toggleDarkMode = () => {
-    document.documentElement.classList.toggle('dark');
-    setDarkMode(!darkMode);
-  };
+  const ThemeIcon = theme === 'system' ? Monitor : isDark ? Moon : Sun;
+  const themeLabel = theme === 'system' ? 'System' : isDark ? 'Dark' : 'Light';
 
   const navLinks = [
     { to: '/', label: 'Dashboard', icon: Activity },
@@ -75,10 +72,11 @@ export function Header({ connectionStatus, onReconnect }: HeaderProps) {
 
             {/* Dark mode toggle */}
             <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={toggle}
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title={`Theme: ${themeLabel}`}
             >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <ThemeIcon className="w-5 h-5" />
             </button>
 
             {/* User menu */}

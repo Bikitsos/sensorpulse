@@ -294,16 +294,16 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ---
 
-### Phase 6: Polish & Optimization
+### Phase 6: Polish & Optimization ✅
 
-- [ ] **UI Polish**
+- [x] **UI Polish**
   - Add Dark Mode support.
   - Add color-coding (e.g., temperature turns red if > 25°C).
 
-- [ ] **Mobile Responsiveness**
+- [x] **Mobile Responsiveness**
   - Ensure graphs scale down correctly on phones.
 
-- [ ] **Data Cleanup**
+- [x] **Data Cleanup**
   - Implement a scheduled job (`pg_cron`) to remove raw data older than 30 days.
 
 ---
@@ -488,7 +488,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 | 3     | ✅ Complete | Ingestion Service |
 | 4     | ✅ Complete | REST API |
 | 5     | ✅ Complete | React Frontend |
-| 6     | ⬜ Not Started | Polish & Optimization |
+| 6     | ✅ Complete | Polish & Optimization |
 | 7     | ⬜ Not Started | Testing |
 | 8     | ⬜ Not Started | CI/CD & Deployment |
 

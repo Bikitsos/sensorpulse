@@ -106,9 +106,39 @@ export function getTemperatureRange(temp: number | null): TemperatureRange {
 export function getTemperatureColor(temp: number | null): string {
   const range = getTemperatureRange(temp);
   switch (range) {
-    case 'cold': return 'text-blue-500';
+    case 'cold': return 'text-blue-500 dark:text-blue-400';
     case 'normal': return 'text-sp-cyan';
-    case 'warm': return 'text-orange-500';
-    case 'hot': return 'text-red-500';
+    case 'warm': return 'text-orange-500 dark:text-orange-400';
+    case 'hot': return 'text-red-500 dark:text-red-400';
   }
+}
+
+export function getTemperatureBadgeClass(temp: number | null): string {
+  const range = getTemperatureRange(temp);
+  return `temp-badge temp-badge-${range}`;
+}
+
+export type HumidityRange = 'low' | 'normal' | 'high';
+
+export function getHumidityRange(humidity: number | null): HumidityRange {
+  if (humidity === null) return 'normal';
+  if (humidity < 30) return 'low';
+  if (humidity < 65) return 'normal';
+  return 'high';
+}
+
+export function getHumidityColor(humidity: number | null): string {
+  const range = getHumidityRange(humidity);
+  switch (range) {
+    case 'low': return 'text-yellow-500 dark:text-yellow-400';
+    case 'normal': return 'text-sp-cyan';
+    case 'high': return 'text-blue-600 dark:text-blue-400';
+  }
+}
+
+export function getBatteryColor(battery: number | null): string {
+  if (battery === null) return 'text-gray-400';
+  if (battery < 20) return 'text-red-500';
+  if (battery < 50) return 'text-yellow-500';
+  return 'text-sp-lime';
 }

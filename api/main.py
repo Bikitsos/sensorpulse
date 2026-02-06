@@ -17,6 +17,7 @@ from db import engine
 from middleware import RateLimitMiddleware
 from routes import sensors, auth, websocket, reports
 from websocket import ws_manager
+from cleanup import cleanup_scheduler, cleanup_old_readings
 
 # Configure structured logging
 structlog.configure(
@@ -57,10 +58,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         logger.error("Database connection failed", error=str(e))
         raise
     
+    # Start background data cleanup scheduler
+    cleanup_task = asyncio.create_task(cleanup_scheduler())
+    logger.info("Data cleanup scheduler launched")
+    
     yield
     
     # Shutdown
     logger.info("SensorPulse API shutting down")
+    
+    # Cancel cleanup scheduler
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
     
     # Close all WebSocket connections
     await ws_manager.disconnect_all()
@@ -190,6 +202,23 @@ async def root():
         "version": settings.version,
         "docs": "/docs" if settings.debug else None,
         "health": "/health",
+    }
+
+
+@app.post("/api/admin/cleanup", tags=["admin"])
+async def trigger_cleanup(days: int = 30):
+    """
+    Manually trigger data cleanup.
+    
+    Deletes sensor readings older than the specified number of days.
+    Default retention: 30 days.
+    """
+    deleted = await cleanup_old_readings(retention_days=days)
+    return {
+        "status": "completed",
+        "rows_deleted": deleted,
+        "retention_days": days,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

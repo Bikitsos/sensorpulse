@@ -2,7 +2,7 @@
 // SensorPulse Frontend - Temperature Chart Component
 // ================================
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   AreaChart,
   Area,
@@ -34,6 +34,15 @@ export function TemperatureChart({
   deviceName,
   showHumidity = true 
 }: TemperatureChartProps) {
+  const isDark = document.documentElement.classList.contains('dark');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   const chartData = useMemo<ChartDataPoint[]>(() => {
     return readings
       .map((r) => ({
@@ -66,11 +75,11 @@ export function TemperatureChart({
   }
 
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[250px] sm:h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={chartData}
-          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          margin={{ top: 10, right: isMobile ? 10 : 30, left: isMobile ? -10 : 0, bottom: 0 }}
         >
           <defs>
             <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
@@ -85,24 +94,25 @@ export function TemperatureChart({
           
           <CartesianGrid 
             strokeDasharray="3 3" 
-            stroke="#e5e7eb" 
-            className="dark:stroke-gray-700"
+            stroke={isDark ? '#374151' : '#e5e7eb'}
           />
           
           <XAxis
             dataKey="time"
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            tickLine={{ stroke: '#6b7280' }}
-            axisLine={{ stroke: '#e5e7eb' }}
+            tick={{ fill: isDark ? '#9ca3af' : '#6b7280', fontSize: isMobile ? 10 : 12 }}
+            tickLine={{ stroke: isDark ? '#4b5563' : '#6b7280' }}
+            axisLine={{ stroke: isDark ? '#374151' : '#e5e7eb' }}
+            interval={isMobile ? 'preserveStartEnd' : 'equidistantPreserveStart'}
           />
           
           <YAxis
             yAxisId="temp"
             domain={[minTemp, maxTemp]}
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            tickLine={{ stroke: '#6b7280' }}
-            axisLine={{ stroke: '#e5e7eb' }}
+            tick={{ fill: isDark ? '#9ca3af' : '#6b7280', fontSize: isMobile ? 10 : 12 }}
+            tickLine={{ stroke: isDark ? '#4b5563' : '#6b7280' }}
+            axisLine={{ stroke: isDark ? '#374151' : '#e5e7eb' }}
             tickFormatter={(value) => `${value}°`}
+            width={isMobile ? 35 : 45}
           />
           
           {showHumidity && (
@@ -110,19 +120,21 @@ export function TemperatureChart({
               yAxisId="humidity"
               orientation="right"
               domain={[0, 100]}
-              tick={{ fill: '#6b7280', fontSize: 12 }}
-              tickLine={{ stroke: '#6b7280' }}
-              axisLine={{ stroke: '#e5e7eb' }}
+              tick={{ fill: isDark ? '#9ca3af' : '#6b7280', fontSize: isMobile ? 10 : 12 }}
+              tickLine={{ stroke: isDark ? '#4b5563' : '#6b7280' }}
+              axisLine={{ stroke: isDark ? '#374151' : '#e5e7eb' }}
               tickFormatter={(value) => `${value}%`}
+              width={isMobile ? 35 : 45}
             />
           )}
           
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
               borderRadius: '8px',
-              border: '1px solid #e5e7eb',
+              border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              color: isDark ? '#f3f4f6' : '#111827',
             }}
             labelFormatter={(label) => `Time: ${label}`}
             formatter={(value: number, name: string) => {
