@@ -257,6 +257,9 @@ Reports include:
 
 - [ROADMAP.md](ROADMAP.md) — Development roadmap & phases
 - [DEPLOYMENT.md](DEPLOYMENT.md) — Detailed deployment guide
+- [Production Requirements](docs/REQUIREMENTS-PRODUCTION.md) — System, software & service requirements for production
+- [Development Requirements](docs/REQUIREMENTS-DEV.md) — Local development setup & tooling
+- [Testing Requirements](docs/REQUIREMENTS-TESTING.md) — Test frameworks, commands & CI integration
 - [API Docs](/docs) — Interactive Swagger documentation
 
 ---
