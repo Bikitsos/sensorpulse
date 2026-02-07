@@ -17,13 +17,14 @@ cd frontend && npm install && npx vitest run
 cd frontend && npx playwright install chromium && npx playwright test
 ```
 
-Or run everything at once:
+Or use the test script:
 
 ```bash
-./scripts/test.sh          # backend + frontend
-./scripts/test.sh backend  # backend only
-./scripts/test.sh frontend # frontend only
-./scripts/test.sh e2e      # Playwright E2E
+./scripts/test.sh            # backend + frontend (local)
+./scripts/test.sh backend    # backend only (local, SQLite)
+./scripts/test.sh frontend   # frontend only (local)
+./scripts/test.sh e2e        # Playwright E2E (local)
+./scripts/test.sh container  # backend + frontend inside Podman containers (real Postgres)
 ```
 
 ---
@@ -84,21 +85,26 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 ```
 
-### Test Database
+### Test Database (Dual Mode)
 
-Tests use **SQLite** (`sqlite+aiosqlite:///./test.db`) — no PostgreSQL needed.
+The test suite supports two database modes, selected automatically:
 
-The `conftest.py` sets these environment overrides automatically:
+| Mode | When | Database | `latest_readings` View |
+|------|------|----------|------------------------|
+| **Local** (default) | `TEST_DATABASE_URL` not set | SQLite via aiosqlite | Not available — affected tests accept 500 |
+| **Container** | `TEST_DATABASE_URL` is set | PostgreSQL via asyncpg | Created by Alembic migrations |
+
+**Local mode** — `conftest.py` sets these env vars automatically:
 
 | Variable | Test Value | Purpose |
-|----------|-----------|---------|
+|----------|-----------|--------|
 | `DATABASE_URL` | `sqlite:///./test.db` | SQLite instead of Postgres |
 | `SECRET_KEY` | `test-secret-key-for-jwt-signing` | JWT signing |
 | `GOOGLE_CLIENT_ID` | `""` (empty) | Disables OAuth |
 | `GOOGLE_CLIENT_SECRET` | `""` (empty) | Disables OAuth |
 | `RESEND_API_KEY` | `""` (empty) | Disables email sending |
 
-> **Note:** The `latest_readings` SQL view exists only in PostgreSQL. Route tests that depend on it accept both `200` and `500` responses.
+**Container mode** — `podman-compose.test.yml` sets `TEST_DATABASE_URL` pointing to a real Postgres container. Alembic migrations run first, so the `latest_readings` view and all indexes exist.
 
 ### Fixtures
 
@@ -271,19 +277,34 @@ npx playwright show-report
 
 ## Containerized Testing
 
-Run the full suite inside containers with no local Python/Node needed:
+Run the full suite inside Podman/Docker containers — no local Python or Node.js required:
 
 ```bash
+# Via the test script (recommended)
+./scripts/test.sh container
+
+# Or directly with podman-compose
 podman-compose -f podman-compose.test.yml up --build --abort-on-container-exit
 ```
 
-`podman-compose.test.yml` spins up:
+The script auto-detects `podman-compose` or `docker compose` and cleans up containers after the run.
 
-| Container | Image | Purpose |
-|-----------|-------|---------|
-| `test-db` | postgres:16-alpine | Isolated PostgreSQL (tmpfs, no persistence) |
-| `test-api` | `./api` Dockerfile | Runs Alembic migrations + `pytest` |
-| `test-frontend` | `./frontend` Dockerfile (builder stage) | Runs `vitest run --coverage` |
+### What Runs
+
+`podman-compose.test.yml` spins up three containers:
+
+| Container | Image | What It Does |
+|-----------|-------|--------------|
+| `test-db` | postgres:16-alpine | Ephemeral Postgres on tmpfs (port 5433) |
+| `test-api` | `./api/Dockerfile.dev` | `alembic upgrade head` → `pytest` (84 tests against real Postgres) |
+| `test-frontend` | `./frontend/Dockerfile.dev` | `vitest run` (48 unit tests) |
+
+### Advantages Over Local Tests
+
+- **Real Postgres**: The `latest_readings` SQL view exists, so all route tests assert `200`
+- **Isolated**: Containers are destroyed after the run — no leftover state
+- **Reproducible**: Same environment as CI/production
+- **No setup**: No need to install Python, Node, or any dependencies locally
 
 ---
 

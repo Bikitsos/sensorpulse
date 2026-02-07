@@ -2,9 +2,13 @@
 # SensorPulse API - Route Integration Tests
 # ================================
 
+import os
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+
+_USE_POSTGRES = bool(os.environ.get("TEST_DATABASE_URL"))
 
 
 # ========== Health ==========
@@ -53,9 +57,12 @@ class TestSensorRoutes:
 
     async def test_latest_returns_list(self, auth_client: AsyncClient, seed_readings):
         resp = await auth_client.get("/api/latest")
-        # latest uses a SQL view that may not exist in sqlite —
-        # if 404/500, still confirms the route is wired and auth works
-        assert resp.status_code in (200, 500)
+        if _USE_POSTGRES:
+            # Postgres has the latest_readings view from Alembic
+            assert resp.status_code == 200
+        else:
+            # SQLite has no view — 500 is expected, but route + auth work
+            assert resp.status_code in (200, 500)
 
     async def test_history_returns_readings(self, auth_client: AsyncClient, seed_readings):
         resp = await auth_client.get("/api/history/office", params={"hours": 48})
@@ -71,8 +78,10 @@ class TestSensorRoutes:
 
     async def test_device_latest_returns_reading(self, auth_client: AsyncClient, seed_readings):
         resp = await auth_client.get("/api/devices/office/latest")
-        # Depends on latest_readings view; might 500 on sqlite
-        assert resp.status_code in (200, 500)
+        if _USE_POSTGRES:
+            assert resp.status_code == 200
+        else:
+            assert resp.status_code in (200, 500)
 
 
 # ========== Auth Routes ==========

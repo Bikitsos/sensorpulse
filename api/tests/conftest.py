@@ -1,6 +1,13 @@
 # ================================
 # SensorPulse API - Pytest Configuration
 # ================================
+#
+# Supports two modes:
+#   1. Local (default): SQLite via aiosqlite — no Postgres needed
+#   2. Container:       Real PostgreSQL — set TEST_DATABASE_URL env var
+#
+# When TEST_DATABASE_URL is set, tables are created via Alembic migrations
+# (run before pytest in the compose command) so the latest_readings view exists.
 
 import os
 import uuid
@@ -11,17 +18,31 @@ from typing import AsyncGenerator, Generator
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-# Override DATABASE_URL BEFORE importing app modules
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-os.environ["SECRET_KEY"] = "test-secret-key-for-jwt-signing"
-os.environ["GOOGLE_CLIENT_ID"] = ""
-os.environ["GOOGLE_CLIENT_SECRET"] = ""
-os.environ["RESEND_API_KEY"] = ""
-os.environ["API_DEBUG"] = "true"
+# ---------------------------------------------------------------------------
+# Determine test database: Postgres (container) or SQLite (local)
+# ---------------------------------------------------------------------------
+
+_USE_POSTGRES = bool(os.environ.get("TEST_DATABASE_URL"))
+
+if _USE_POSTGRES:
+    # Container mode — use the real Postgres provided by podman-compose
+    _ASYNC_DB_URL = os.environ["TEST_DATABASE_URL"]
+    # Tell the app to use the same Postgres
+    os.environ["DATABASE_URL"] = _ASYNC_DB_URL.replace("+asyncpg", "")
+else:
+    # Local mode — lightweight SQLite, no external deps
+    _ASYNC_DB_URL = "sqlite+aiosqlite:///./test.db"
+    os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+
+# Shared env overrides (safe defaults)
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-jwt-signing")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "")
+os.environ.setdefault("GOOGLE_CLIENT_SECRET", "")
+os.environ.setdefault("RESEND_API_KEY", "")
+os.environ.setdefault("API_DEBUG", "true")
 
 
 @pytest.fixture(scope="session")
@@ -33,16 +54,10 @@ def event_loop():
 
 
 # ---------------------------------------------------------------------------
-# Async SQLite engine for tests (no Postgres required)
+# Async engine for tests
 # ---------------------------------------------------------------------------
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker as sync_sessionmaker
-
-TEST_DB_URL = "sqlite+aiosqlite:///./test.db"
-SYNC_TEST_DB_URL = "sqlite:///./test.db"
-
-test_engine = create_async_engine(TEST_DB_URL, echo=False)
+test_engine = create_async_engine(_ASYNC_DB_URL, echo=False)
 TestAsyncSession = sessionmaker(
     bind=test_engine,
     class_=AsyncSession,
@@ -56,15 +71,31 @@ from db.models import SensorReading, User
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_database():
-    """Create all tables at session start, drop at session end."""
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """
+    Create tables at session start, drop at session end.
+
+    - SQLite mode: creates tables from ORM metadata (no views).
+    - Postgres mode: tables already exist via Alembic; this is a no-op
+      but we still drop+recreate to guarantee a clean slate.
+    """
+    if _USE_POSTGRES:
+        # Alembic migrations already ran — just truncate for a clean slate
+        async with test_engine.begin() as conn:
+            for table in reversed(Base.metadata.sorted_tables):
+                await conn.execute(table.delete())
+    else:
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    # Remove test db file
-    import pathlib
-    pathlib.Path("./test.db").unlink(missing_ok=True)
+    if _USE_POSTGRES:
+        async with test_engine.begin() as conn:
+            for table in reversed(Base.metadata.sorted_tables):
+                await conn.execute(table.delete())
+    else:
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        import pathlib
+        pathlib.Path("./test.db").unlink(missing_ok=True)
 
 
 @pytest_asyncio.fixture
