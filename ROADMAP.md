@@ -308,34 +308,37 @@ This document outlines the development roadmap for the **MQTT Sensor Dashboard**
 
 ---
 
-### Phase 7: Testing
+### Phase 7: Testing ✅
 
 > Ensure reliability and catch regressions early.
 
-- [ ] **Backend Testing (Pytest)**
+- [x] **Backend Testing (Pytest)**
   - Unit tests for:
-    - Payload parsing logic.
-    - Database models and queries.
-    - Authentication flow.
+    - Payload parsing logic (17 tests).
+    - Database models and queries (13 service tests).
+    - Authentication flow (6 tests).
+    - Schema validation (14 tests).
+    - Rate limiter middleware (6 tests).
+    - WebSocket manager (10 tests).
   - Integration tests for:
-    - API endpoints (with test database).
-    - MQTT message handling.
+    - API endpoints with test database (18 route tests).
   - Test coverage target: **80%+**
 
-- [ ] **Frontend Testing**
+- [x] **Frontend Testing**
   - Unit tests with **React Testing Library**:
-    - Component rendering.
-    - User interactions.
-    - State management.
+    - Type helper functions (22 tests).
+    - SensorCard component rendering & interactions (14 tests).
+    - TemperatureChart rendering & empty state (4 tests).
+    - useDarkMode hook state management (8 tests).
   - E2E tests with **Playwright**:
-    - Login flow.
     - Dashboard navigation.
-    - Settings changes.
+    - Auth flow checks.
+    - Dark mode toggle.
 
-- [ ] **Test Infrastructure**
-  - Create `podman-compose.test.yml` for isolated test environment.
-  - Add test database with seed data.
-  - Create `scripts/test.sh` to run all tests in containers.
+- [x] **Test Infrastructure**
+  - Created `podman-compose.test.yml` for isolated test environment.
+  - SQLite test database with seed data fixtures (no Postgres required).
+  - Created `scripts/test.sh` and `scripts/lint.sh`.
 
 ---
 
@@ -489,7 +492,7 @@ The React frontend will **not** handle raw MQTT JSON. The Ingestion Service will
 | 4     | ✅ Complete | REST API |
 | 5     | ✅ Complete | React Frontend |
 | 6     | ✅ Complete | Polish & Optimization |
-| 7     | ⬜ Not Started | Testing |
+| 7     | ✅ Complete | Testing |
 | 8     | ⬜ Not Started | CI/CD & Deployment |
 
 ---

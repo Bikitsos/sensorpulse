@@ -1,0 +1,13 @@
+# ================================
+# SensorPulse API - Pytest Settings
+# ================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks integration tests (require DB)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

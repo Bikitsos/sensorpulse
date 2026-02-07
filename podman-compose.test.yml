@@ -1,0 +1,52 @@
+# ================================
+# SensorPulse - Test Docker Compose
+# ================================
+# Usage: podman-compose -f podman-compose.test.yml up --build --abort-on-container-exit
+
+version: "3.8"
+
+services:
+  test-db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: sensorpulse_test
+      POSTGRES_USER: sp_test
+      POSTGRES_PASSWORD: sp_test_pass
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sp_test -d sensorpulse_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  test-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sp_test:sp_test_pass@test-db:5432/sensorpulse_test
+      SECRET_KEY: test-secret-key-not-for-production
+      API_DEBUG: "true"
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      RESEND_API_KEY: ""
+    depends_on:
+      test-db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        cd /app &&
+        alembic upgrade head &&
+        python -m pytest tests/ -v --tb=short --cov=. --cov-report=term-missing
+      "
+
+  test-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    command: npx vitest run --reporter=verbose --coverage
+    working_dir: /app
