@@ -2,20 +2,23 @@
 # ================================
 # SensorPulse - Test Runner Script
 # ================================
-# Usage: ./scripts/test.sh [backend|frontend|e2e|container|all]
+# All tests run inside Podman/Docker containers.
+# No local Python, Node.js, or database required.
+#
+# Usage: ./scripts/test.sh [backend|frontend|e2e|lint|all]
 #
 # Modes:
-#   backend   – Run pytest locally (SQLite, no Postgres needed)
-#   frontend  – Run vitest locally
-#   e2e       – Run Playwright E2E locally
-#   container – Run backend + frontend tests inside Podman containers
-#              (real Postgres, isolated environment)
-#   all       – Run backend + frontend locally (default)
+#   backend  - Pytest against real Postgres (test-db + test-api)
+#   frontend - Vitest unit tests (test-frontend)
+#   e2e      - Playwright E2E (test-db + api-serve + frontend-serve + Playwright)
+#   lint     - Ruff + ESLint + tsc (lint-api + lint-frontend)
+#   all      - backend + frontend (default)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+COMPOSE_FILE="$ROOT_DIR/podman-compose.test.yml"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,38 +29,8 @@ info()  { echo -e "${CYAN}[test]${NC} $*"; }
 pass()  { echo -e "${GREEN}[pass]${NC} $*"; }
 fail()  { echo -e "${RED}[fail]${NC} $*"; }
 
-run_backend() {
-  info "Running backend tests (local / SQLite)..."
-  cd "$ROOT_DIR/api"
-  python -m pytest tests/ \
-    -v \
-    --tb=short \
-    --cov=. \
-    --cov-report=term-missing \
-    --cov-report=html:htmlcov \
-    --cov-fail-under=70
-  pass "Backend tests passed"
-}
-
-run_frontend() {
-  info "Running frontend unit tests (local)..."
-  cd "$ROOT_DIR/frontend"
-  npx vitest run --reporter=verbose --coverage
-  pass "Frontend unit tests passed"
-}
-
-run_e2e() {
-  info "Running E2E tests..."
-  cd "$ROOT_DIR/frontend"
-  npx playwright test --reporter=list
-  pass "E2E tests passed"
-}
-
-run_container() {
-  info "Running tests inside Podman containers (Postgres + Node)..."
-  cd "$ROOT_DIR"
-
-  # Detect compose command (podman-compose or docker compose)
+# ---------- Detect compose command ----------
+detect_compose() {
   if command -v podman-compose &>/dev/null; then
     COMPOSE="podman-compose"
   elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
@@ -66,49 +39,82 @@ run_container() {
     fail "Neither podman-compose nor docker compose found"
     exit 1
   fi
-
   info "Using: $COMPOSE"
+}
 
-  # Build and run — exit when any container stops
-  $COMPOSE -f podman-compose.test.yml up \
+# ---------- Cleanup (runs on exit) ----------
+cleanup() {
+  info "Cleaning up containers..."
+  $COMPOSE -f "$COMPOSE_FILE" --profile e2e --profile lint down -v --remove-orphans 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# ---------- Modes ----------
+
+run_backend() {
+  info "Running backend tests (Postgres container)..."
+  cd "$ROOT_DIR"
+  $COMPOSE -f "$COMPOSE_FILE" up \
     --build \
     --abort-on-container-exit \
-    --exit-code-from test-api
+    --exit-code-from test-api \
+    test-db test-api
+}
 
-  EXIT_CODE=$?
+run_frontend() {
+  info "Running frontend unit tests (container)..."
+  cd "$ROOT_DIR"
+  $COMPOSE -f "$COMPOSE_FILE" up \
+    --build \
+    --abort-on-container-exit \
+    --exit-code-from test-frontend \
+    test-frontend
+}
 
-  # Clean up containers
-  $COMPOSE -f podman-compose.test.yml down -v --remove-orphans 2>/dev/null || true
+run_e2e() {
+  info "Running Playwright E2E tests (containers)..."
+  cd "$ROOT_DIR"
+  $COMPOSE -f "$COMPOSE_FILE" --profile e2e up \
+    --build \
+    --abort-on-container-exit \
+    --exit-code-from test-e2e
+}
 
-  if [ "$EXIT_CODE" -eq 0 ]; then
-    pass "Container tests passed"
-  else
-    fail "Container tests failed (exit code: $EXIT_CODE)"
-    exit "$EXIT_CODE"
-  fi
+run_lint() {
+  info "Running linters (containers)..."
+  cd "$ROOT_DIR"
+  $COMPOSE -f "$COMPOSE_FILE" --profile lint up \
+    --build \
+    --abort-on-container-exit \
+    lint-api lint-frontend
 }
 
 run_all() {
-  run_backend
-  echo ""
-  run_frontend
-  echo ""
-  info "Skipping E2E tests (run with: ./scripts/test.sh e2e)"
-  info "Skipping container tests (run with: ./scripts/test.sh container)"
-  echo ""
-  pass "All local tests completed"
+  info "Running all tests (backend + frontend) in containers..."
+  cd "$ROOT_DIR"
+  $COMPOSE -f "$COMPOSE_FILE" up \
+    --build \
+    --abort-on-container-exit \
+    --exit-code-from test-api \
+    test-db test-api test-frontend
 }
+
+# ---------- Main ----------
+
+detect_compose
 
 TARGET="${1:-all}"
 
 case "$TARGET" in
-  backend)   run_backend   ;;
-  frontend)  run_frontend  ;;
-  e2e)       run_e2e       ;;
-  container) run_container ;;
-  all)       run_all       ;;
+  backend)  run_backend  ;;
+  frontend) run_frontend ;;
+  e2e)      run_e2e      ;;
+  lint)     run_lint     ;;
+  all)      run_all      ;;
   *)
-    echo "Usage: $0 [backend|frontend|e2e|container|all]"
+    echo "Usage: $0 [backend|frontend|e2e|lint|all]"
     exit 1
     ;;
 esac
+
+pass "Tests passed ($TARGET)"

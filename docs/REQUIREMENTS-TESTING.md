@@ -6,34 +6,25 @@ Everything needed to run the SensorPulse test suite.
 
 ## Quick Start
 
-```bash
-# Backend — no Postgres needed (uses SQLite)
-cd api && pip install -r requirements.txt && python -m pytest tests/ -v
-
-# Frontend unit tests
-cd frontend && npm install && npx vitest run
-
-# E2E (requires dev server running)
-cd frontend && npx playwright install chromium && npx playwright test
-```
-
-Or use the test script:
+All tests run inside **Podman/Docker containers**. No local Python, Node.js, or database required.
 
 ```bash
-./scripts/test.sh            # backend + frontend (local)
-./scripts/test.sh backend    # backend only (local, SQLite)
-./scripts/test.sh frontend   # frontend only (local)
-./scripts/test.sh e2e        # Playwright E2E (local)
-./scripts/test.sh container  # backend + frontend inside Podman containers (real Postgres)
+./scripts/test.sh            # backend + frontend (default)
+./scripts/test.sh backend    # backend only (Postgres container)
+./scripts/test.sh frontend   # frontend unit tests only
+./scripts/test.sh e2e        # Playwright E2E (full stack in containers)
+./scripts/test.sh lint       # ruff + eslint + tsc
 ```
+
+The script auto-detects `podman-compose` or `docker compose` and cleans up containers on exit.
 
 ---
 
 ## Prerequisites
 
-All [development requirements](REQUIREMENTS-DEV.md) must be met first.
-
-No external services, API keys, or running databases are required for unit and integration tests. The test suite uses **SQLite via aiosqlite** for the backend and **jsdom** for the frontend.
+- **Podman** (with `podman-compose`) or **Docker** (with `docker compose`)
+- No local Python, Node.js, or PostgreSQL installation required
+- All dependencies are installed inside the container images
 
 ---
 
@@ -85,26 +76,20 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 ```
 
-### Test Database (Dual Mode)
+### Test Database
 
-The test suite supports two database modes, selected automatically:
+Tests run against a **real PostgreSQL 16** container (ephemeral, tmpfs-backed). Alembic migrations create all tables and the `latest_readings` view, so tests exercise the same schema as production.
 
-| Mode | When | Database | `latest_readings` View |
-|------|------|----------|------------------------|
-| **Local** (default) | `TEST_DATABASE_URL` not set | SQLite via aiosqlite | Not available — affected tests accept 500 |
-| **Container** | `TEST_DATABASE_URL` is set | PostgreSQL via asyncpg | Created by Alembic migrations |
-
-**Local mode** — `conftest.py` sets these env vars automatically:
+`podman-compose.test.yml` sets these environment variables for the test-api container:
 
 | Variable | Test Value | Purpose |
 |----------|-----------|--------|
-| `DATABASE_URL` | `sqlite:///./test.db` | SQLite instead of Postgres |
-| `SECRET_KEY` | `test-secret-key-for-jwt-signing` | JWT signing |
+| `TEST_DATABASE_URL` | `postgresql+asyncpg://sp_test:sp_test_pass@test-db:5432/sensorpulse_test` | Tells conftest to use Postgres |
+| `DATABASE_URL` | (same as above) | App-level DB connection |
+| `SECRET_KEY` | `test-secret-key-not-for-production` | JWT signing |
 | `GOOGLE_CLIENT_ID` | `""` (empty) | Disables OAuth |
 | `GOOGLE_CLIENT_SECRET` | `""` (empty) | Disables OAuth |
 | `RESEND_API_KEY` | `""` (empty) | Disables email sending |
-
-**Container mode** — `podman-compose.test.yml` sets `TEST_DATABASE_URL` pointing to a real Postgres container. Alembic migrations run first, so the `latest_readings` view and all indexes exist.
 
 ### Fixtures
 
@@ -277,53 +262,61 @@ npx playwright show-report
 
 ## Containerized Testing
 
-Run the full suite inside Podman/Docker containers — no local Python or Node.js required:
+All tests run inside containers via `podman-compose.test.yml`.
+
+### Services
+
+| Container | Image | Profile | What It Does |
+|-----------|-------|---------|-------------|
+| `test-db` | postgres:16-alpine | default | Ephemeral Postgres on tmpfs (port 5433) |
+| `test-api` | `./api/Dockerfile.dev` | default | `alembic upgrade head` → `pytest` (84 tests) |
+| `test-frontend` | `./frontend/Dockerfile.dev` | default | `vitest run` (48 unit tests) |
+| `lint-api` | `./api/Dockerfile.dev` | lint | `ruff check` + `ruff format --check` |
+| `lint-frontend` | `./frontend/Dockerfile.dev` | lint | `eslint` + `tsc --noEmit` |
+| `test-api-serve` | `./api/Dockerfile.dev` | e2e | FastAPI server for E2E |
+| `test-frontend-serve` | `./frontend/Dockerfile.dev` | e2e | Vite dev server for E2E |
+| `test-e2e` | `./frontend/Dockerfile.e2e` | e2e | Playwright (Chromium) E2E tests |
+
+### Running
 
 ```bash
-# Via the test script (recommended)
-./scripts/test.sh container
+./scripts/test.sh            # backend + frontend (default)
+./scripts/test.sh backend    # test-db + test-api
+./scripts/test.sh frontend   # test-frontend
+./scripts/test.sh e2e        # full stack + Playwright
+./scripts/test.sh lint       # lint-api + lint-frontend
+```
 
-# Or directly with podman-compose
+Or directly with compose:
+
+```bash
 podman-compose -f podman-compose.test.yml up --build --abort-on-container-exit
 ```
 
-The script auto-detects `podman-compose` or `docker compose` and cleans up containers after the run.
+### Why Containers
 
-### What Runs
-
-`podman-compose.test.yml` spins up three containers:
-
-| Container | Image | What It Does |
-|-----------|-------|--------------|
-| `test-db` | postgres:16-alpine | Ephemeral Postgres on tmpfs (port 5433) |
-| `test-api` | `./api/Dockerfile.dev` | `alembic upgrade head` → `pytest` (84 tests against real Postgres) |
-| `test-frontend` | `./frontend/Dockerfile.dev` | `vitest run` (48 unit tests) |
-
-### Advantages Over Local Tests
-
-- **Real Postgres**: The `latest_readings` SQL view exists, so all route tests assert `200`
-- **Isolated**: Containers are destroyed after the run — no leftover state
-- **Reproducible**: Same environment as CI/production
-- **No setup**: No need to install Python, Node, or any dependencies locally
+- **Real Postgres**: The `latest_readings` SQL view and all indexes exist
+- **Isolated**: Ephemeral tmpfs DB, containers destroyed on exit
+- **Reproducible**: Same images and dependencies every run
+- **No setup**: No local Python, Node, or Postgres needed
 
 ---
 
 ## Linting
 
-Run all linters before tests:
+Run all linters inside containers:
 
 ```bash
-./scripts/lint.sh          # both backend + frontend
-./scripts/lint.sh backend  # ruff only
-./scripts/lint.sh frontend # eslint + tsc only
+./scripts/lint.sh        # shortcut for ./scripts/test.sh lint
+./scripts/test.sh lint   # same thing
 ```
 
-| Tool | Language | Command |
-|------|----------|---------|
-| `ruff check` | Python | Lint + auto-fix |
-| `ruff format` | Python | Formatter check |
-| `eslint` | TypeScript/React | Lint with `--max-warnings 0` |
-| `tsc --noEmit` | TypeScript | Type checking |
+| Tool | Language | Container | What It Checks |
+|------|----------|-----------|----------------|
+| `ruff check` | Python | lint-api | Lint rules |
+| `ruff format --check` | Python | lint-api | Formatting |
+| `eslint` | TypeScript/React | lint-frontend | Lint with `--max-warnings 0` |
+| `tsc --noEmit` | TypeScript | lint-frontend | Type checking |
 
 ---
 
