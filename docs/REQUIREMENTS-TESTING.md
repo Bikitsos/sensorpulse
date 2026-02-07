@@ -32,7 +32,7 @@ The script auto-detects `podman-compose` or `docker compose` and cleans up conta
 
 ### Dependencies
 
-Included in `api/requirements.txt`:
+Installed inside the container via `api/requirements.txt`:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
@@ -40,31 +40,15 @@ Included in `api/requirements.txt`:
 | `pytest-asyncio` | ≥ 0.23 | Async test support for FastAPI |
 | `pytest-cov` | ≥ 4.1 | Coverage reporting |
 | `httpx` | ≥ 0.26 | Async HTTP test client (`ASGITransport`) |
-| `aiosqlite` | ≥ 0.19 | SQLite async driver (test DB) |
 | `ruff` | ≥ 0.2 | Linter / formatter |
-
-### Install
-
-```bash
-cd api
-pip install -r requirements.txt
-```
 
 ### Run
 
 ```bash
-# All backend tests
-python -m pytest tests/ -v
-
-# With coverage report
-python -m pytest tests/ --cov=. --cov-report=term-missing --cov-report=html:htmlcov
-
-# Specific test file
-python -m pytest tests/test_auth.py -v
-
-# Specific test class
-python -m pytest tests/test_routes.py::TestSensorRoutes -v
+./scripts/test.sh backend
 ```
+
+The container runs `alembic upgrade head` then `pytest tests/ -v --tb=short --cov`.
 
 ### Configuration
 
@@ -131,7 +115,7 @@ Tests run against a **real PostgreSQL 16** container (ephemeral, tmpfs-backed). 
 
 ### Dependencies
 
-Included in `frontend/package.json` devDependencies:
+Installed inside the container via `frontend/package.json` devDependencies:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
@@ -142,33 +126,10 @@ Included in `frontend/package.json` devDependencies:
 | `@testing-library/jest-dom` | ^6.1 | DOM assertion matchers |
 | `@testing-library/user-event` | ^14.5 | Simulated user interactions |
 
-### Install
-
-```bash
-cd frontend
-npm install
-```
-
 ### Run
 
 ```bash
-# All frontend tests
-npm test
-
-# Single run (no watch)
-npx vitest run
-
-# Watch mode (re-runs on save)
-npm test -- --watch
-
-# With UI dashboard
-npm run test:ui
-
-# With coverage
-npx vitest run --coverage
-
-# Specific file
-npx vitest src/types/index.test.ts
+./scripts/test.sh frontend
 ```
 
 ### Configuration
@@ -216,28 +177,13 @@ frontend/src/
 |---------|---------|---------|
 | `@playwright/test` | ^1.40 | E2E browser testing |
 
-### Install
+### Run (inside container)
 
 ```bash
-cd frontend
-npx playwright install chromium
+./scripts/test.sh e2e
 ```
 
-### Run
-
-```bash
-# All E2E tests
-npx playwright test
-
-# Headed (visible browser)
-npx playwright test --headed
-
-# Specific project
-npx playwright test --project=chromium
-
-# Generate HTML report
-npx playwright show-report
-```
+The `test-e2e` container uses `frontend/Dockerfile.e2e` (based on `mcr.microsoft.com/playwright`) with Chromium pre-installed.
 
 ### Configuration
 
